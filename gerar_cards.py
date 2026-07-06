@@ -438,29 +438,23 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
       </div>
     </div>"""
 
-    # --- Painéis por parceiro (tabela evolutiva mês a mês) -----------------
+    # --- Painéis por parceiro (apenas o mês de referência) -----------------
     painel_html = ""
     for l in linhas_ordenadas:
         nome = l["parceiro"].title()
         inicial = nome[0]
         cor_farol = farol(l["conv_produtiva"], media_grupo)
 
-        linhas_tabela = ""
-        for b in blocos_todos:
-            linha_mes = next((x for x in b["linhas"] if x["parceiro"].strip().lower() == l["parceiro"].strip().lower()), None)
-            if not linha_mes:
-                continue
-            if linha_mes["produtivo"] is None:
-                linhas_tabela += f"""<tr class="pendente">
-                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>—</td><td class="conv">Aguardando</td><td class="conv">—</td>
-                </tr>"""
-            else:
-                cor_linha = farol(linha_mes["conv_produtiva"], media_grupo)
-                linhas_tabela += f"""<tr>
-                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>{fmt_int(linha_mes['venda'])}</td>
-                  <td class="conv {cor_linha}">{fmt_pct(linha_mes['conv_produtiva'])}</td>
-                  <td class="conv">{fmt_pct(linha_mes['conv_mailing'])}</td>
-                </tr>"""
+        if l["produtivo"] is None:
+            linha_tabela = f"""<tr class="pendente">
+              <td>{fmt_int(l['mailing'])}</td><td>—</td><td class="conv">Aguardando</td><td class="conv">—</td>
+            </tr>"""
+        else:
+            linha_tabela = f"""<tr>
+              <td>{fmt_int(l['mailing'])}</td><td>{fmt_int(l['venda'])}</td>
+              <td class="conv {cor_farol}">{fmt_pct(l['conv_produtiva'])}</td>
+              <td class="conv">{fmt_pct(l['conv_mailing'])}</td>
+            </tr>"""
 
         evol = evolucao.get(l["parceiro"].strip().lower())
         slug = slugify(l["parceiro"])
@@ -478,8 +472,8 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
             </a>
           </div>
           <table class="evolutivo">
-            <tr><th>Mês</th><th>Mailing</th><th>Vendas Total</th><th>Conversão Produtiva</th><th>Conv. Total</th></tr>
-            {linhas_tabela}
+            <tr><th>Mailing</th><th>Vendas Total</th><th>Conversão Produtiva</th><th>Conv. Total</th></tr>
+            {linha_tabela}
           </table>
           <div class="callout">
             <div class="num">{fmt_int(l['ativos_du'])}</div>
