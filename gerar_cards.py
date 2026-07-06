@@ -462,6 +462,7 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
                 </tr>"""
 
         evol = evolucao.get(l["parceiro"].strip().lower())
+        slug = slugify(l["parceiro"])
 
         painel_html += f"""
         <div class="painel">
@@ -469,6 +470,11 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
             <div class="painel-icone">{inicial}</div>
             <div class="painel-nome">{nome}</div>
             <div class="farol {cor_farol}" title="Conversão produtiva vs. média do grupo"></div>
+            <a class="icon-btn" href="parceiros/{slug}.html" title="Ver card individual de {nome}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M7 17L17 7M17 7H8M17 7V16" stroke="{CORES['bordo']}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           <table class="evolutivo">
             <tr><th>Mês</th><th>Mailing</th><th>Vendas Total</th><th>Conversão Produtiva</th><th>Conv. Total</th></tr>

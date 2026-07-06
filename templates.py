@@ -311,7 +311,8 @@ body {{
 .rel-banner h1 {{
   font-family:'Poppins',sans-serif;
   font-weight:700;
-  font-size:23px;
+  font-size:22px;
+  letter-spacing:.01em;
   margin:0 0 6px;
   line-height:1.3;
 }}
@@ -429,6 +430,18 @@ table.evolutivo tr.pendente td {{ color:{CORES['cinza3']}; font-style:italic; }}
 }}
 .callout .txt {{ font-size:10.5px; color:{CORES['grafite']}; line-height:1.35; }}
 .callout .txt b {{ display:block; font-size:9.5px; text-transform:uppercase; color:{CORES['cinza3']}; letter-spacing:.03em; }}
+.icon-btn {{
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: #FFE9F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s ease;
+}}
+.icon-btn:hover {{ background: #FFD3E1; }}
 
 .rel-consolidado {{
   margin: 22px 0 6px;
