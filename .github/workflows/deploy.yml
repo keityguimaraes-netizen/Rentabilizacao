@@ -1,0 +1,67 @@
+name: Gerar cards e publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dados/**.xlsx"
+      - "gerar_cards.py"
+      - "templates.py"
+      - "assets/**"
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: "Mês alvo (opcional, ex: Junho). Deixe em branco para automático."
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Encontrar a planilha mais recente em dados/
+        id: planilha
+        run: |
+          ARQ=$(ls -t dados/*.xlsx | head -n1)
+          echo "arquivo=$ARQ" >> "$GITHUB_OUTPUT"
+          echo "Planilha usada: $ARQ"
+
+      - name: Gerar os cards (com validação de Média DU e Conversão)
+        run: |
+          python gerar_cards.py "${{ steps.planilha.outputs.arquivo }}" \
+            ${{ github.event.inputs.mes && format('--mes "{0}"', github.event.inputs.mes) || '' }}
+
+      - name: Preparar artefato do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
