@@ -45,28 +45,39 @@ Isso vai:
    python gerar_cards.py dados/Rentabilização_dados.xlsx --mes Junho
    ```
 4. Gerar os arquivos em `site/`:
-   - `site/index.html` — **card geral**: painel de ranking por parceiro (estilo
-     "Desempenho por parceiro"), com o logo vero no cabeçalho. Traz primeiro um
-     **quadro consolidado** (soma dos 3 parceiros, destacado com borda bordô e
-     o símbolo "Σ"), e em seguida o ranking individual — ambos com os mesmos
-     campos: Mailing, Média DU, Contatos produtivos, Conversão Produtiva,
-     Conversão Mailing, Vendas, Ativos por dia útil e **Evolução Ativos DU**
-     (variação % dos Ativos/Dia Útil do mês vigente frente ao mês imediatamente
-     anterior na planilha — verde quando sobe, vermelho quando cai).
+   - `site/index.html` — **card geral**: agora no formato de **relatório comercial**
+     (inspirado no painel "Acompanhamento Evolutivo" que vocês usam), com:
+     - banner com o logo vero e duas caixas de destaque (mês de referência e
+       média de conversão do grupo);
+     - um **painel por parceiro** com farol 🟢🟠🔴 (verde = acima da média do
+       grupo, laranja = perto, vermelho = abaixo), uma **tabela evolutiva
+       mês a mês** (Mailing, Vendas, Conversão) usando os meses disponíveis na
+       planilha, e uma caixa de destaque com "Ativos por dia útil" +
+       evolução % vs. mês anterior;
+     - bloco **consolidado geral do período** (soma dos 3 parceiros);
+     - bloco de **conversão consolidada por parceiro** (ícones + %);
+     - **insights executivos** gerados automaticamente a partir dos próprios
+       dados (melhor parceiro, ponto de atenção, mailing pendente, prioridade);
+     - rodapé com nota explicando os critérios do farol e qualquer alerta de
+       qualidade de dados (ex.: meses idênticos).
    - `site/parceiros/tmkt.html`, `site/parceiros/midia-simples.html`,
-     `site/parceiros/webdealer-logmais.html` — um por parceiro, com os campos
-     focados naquele parceiro (o nome do arquivo é gerado automaticamente a
-     partir do nome do parceiro na planilha)
+     `site/parceiros/webdealer-logmais.html` — cards individuais, um por
+     parceiro, focados só naquele parceiro.
 
 Abra `site/index.html` no navegador para conferir antes de publicar.
 
+> **Adaptações em relação ao painel de referência**: como a nossa planilha
+> tem dados por **mês** (não por dia), a "evolução diária" virou uma
+> **evolução mensal** (Maio/Junho/Julho); e como não existe uma **meta fixa**
+> cadastrada, o farol usa a **média de conversão do grupo no mês** como
+> referência em vez de um percentual de meta.
+
 > **Nota sobre a Evolução Ativos DU**: como nos dados de exemplo "Maio" e
-> "Junho" estão idênticos (ver aviso do terminal), a evolução aparece como
-> +0,0% — isso é esperado até a planilha de Junho ser realmente atualizada
-> com números próprios. Quando não existe mês anterior na planilha (ex.: o
-> primeiro mês) ou faltam dados de Ativos DU, o campo mostra "—" em vez de
-> inventar um número. O mesmo vale para o quadro consolidado, cuja evolução
-> compara a SOMA de Ativos DU dos 3 parceiros entre os dois meses.
+> "Junho" estão idênticos (ver aviso do terminal e do rodapé do relatório), a
+> evolução aparece como +0,0% — isso é esperado até a planilha de Junho ser
+> realmente atualizada com números próprios. Quando não existe mês anterior
+> na planilha ou faltam dados de Ativos DU, o campo mostra "—" em vez de
+> inventar um número.
 
 > Observação encontrada nos dados de exemplo: os números de "Maio" e "Junho"
 > na planilha enviada estão **idênticos** para os três parceiros. O script avisa

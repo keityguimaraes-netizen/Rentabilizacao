@@ -394,6 +394,19 @@ def mailing_pendente_proximo_mes(blocos, bloco_atual):
 # --------------------------------------------------------------------------
 # Construção dos cards (HTML)
 # --------------------------------------------------------------------------
+def farol(pct, benchmark):
+    """Classifica o desempenho em verde/laranja/vermelho comparando com um
+    valor de referência (não temos meta fixa cadastrada, então usamos a
+    média do grupo como referência)."""
+    if pct is None or not benchmark:
+        return "cinza"
+    if pct >= benchmark:
+        return "verde"
+    if pct >= benchmark * 0.75:
+        return "laranja"
+    return "vermelho"
+
+
 def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parceiro_links):
     agg = agregados_gerais(bloco)
     mes = bloco["mes"]
@@ -403,102 +416,146 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
 
     evolucao = evolucao_ativos_du(blocos_todos, bloco)
     evolucao_geral = evolucao_ativos_du_geral(blocos_todos, bloco)
+    mes_pendente, mailing_pendente = mailing_pendente_proximo_mes(blocos_todos, bloco)
 
     linhas_ordenadas = sorted(bloco["linhas"], key=lambda l: (l["conv_produtiva"] or 0), reverse=True)
 
-    mes_pendente, mailing_pendente = mailing_pendente_proximo_mes(blocos_todos, bloco)
-
-    evol_geral_tipo = "cinza" if evolucao_geral is None else ("verde" if evolucao_geral >= 0 else "vermelho")
-    barra_geral = tpl.barra_com_marcador(agg["conv_prod_geral"], media_grupo, cor_barra=CORES["bordo"])
-    pills_geral = "".join([
-        tpl.badge(fmt_int(agg["mailing_total"]), "Mailing", "cinza"),
-        tpl.badge(fmt_num1(agg["media_du_geral"]), "Média DU", "rosa"),
-        tpl.badge(fmt_int(agg["produtivo_total"]), "Produtivo", "cinza"),
-        tpl.badge(fmt_pct(agg["conv_prod_geral"]), "Conv. produtiva", "verde"),
-        tpl.badge(fmt_pct(agg["conv_mail_geral"]), "Conv. mailing", "laranja"),
-        tpl.badge(fmt_int(agg["venda_total"]), "Vendas", "rosa"),
-        tpl.badge(fmt_int(agg["ativos_du_total"]), "Ativos/dia útil", "cinza"),
-        tpl.badge(fmt_pct_signed(evolucao_geral), "Evolução Ativos DU", evol_geral_tipo),
-    ])
-    bloco_consolidado = f"""
-    <div class="parceiro-block consolidado">
-      <div class="parceiro-top">
-        <div class="rank-num total">Σ</div>
-        <div class="parceiro-nome-linha">
-          <div class="nome">Consolidado — todos os parceiros</div>
-          <div class="contexto">Soma de TMKT + Mídia Simples + Webdealer Logmais</div>
-        </div>
-        <div class="parceiro-headline">
-          <div class="num">{fmt_pct(agg['conv_prod_geral'])}</div>
-          <div class="lbl">Conv. produtiva</div>
+    # --- Banner -----------------------------------------------------------
+    banner = f"""
+    <div class="rel-banner">
+      <div class="brand">
+        <img class="logo" src="{logo_branco}" alt="vero">
+        <div class="titles">
+          <span class="tag">Relatório comercial · Mailing parceiros</span>
+          <h1>Acompanhamento Evolutivo — Parceiros/Webdealers</h1>
+          <p>Evolução mês a mês da conversão produtiva e das vendas por parceiro, com foco em resultado e consistência.</p>
         </div>
       </div>
-      {barra_geral}
-      <div class="pills-grid">{pills_geral}</div>
+      <div class="meta-boxes">
+        <div class="meta-box"><div class="valor">{mes}</div><div class="lbl">Mês de referência</div></div>
+        <div class="meta-box"><div class="valor">{fmt_pct(media_grupo)}</div><div class="lbl">Média do grupo (referência)</div></div>
+      </div>
     </div>"""
 
-    blocos_parceiros = ""
-    for i, l in enumerate(linhas_ordenadas, start=1):
-        barra = tpl.barra_com_marcador(l["conv_produtiva"], media_grupo, cor_barra=CORES["laranja"])
-        contexto = f"Mailing enviado: {fmt_int(l['mailing'])}"
+    # --- Painéis por parceiro (tabela evolutiva mês a mês) -----------------
+    painel_html = ""
+    for l in linhas_ordenadas:
+        nome = l["parceiro"].title()
+        inicial = nome[0]
+        cor_farol = farol(l["conv_produtiva"], media_grupo)
+
+        linhas_tabela = ""
+        for b in blocos_todos:
+            linha_mes = next((x for x in b["linhas"] if x["parceiro"].strip().lower() == l["parceiro"].strip().lower()), None)
+            if not linha_mes:
+                continue
+            if linha_mes["produtivo"] is None:
+                linhas_tabela += f"""<tr class="pendente">
+                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>—</td><td class="conv">Aguardando</td>
+                </tr>"""
+            else:
+                cor_linha = farol(linha_mes["conv_produtiva"], media_grupo)
+                linhas_tabela += f"""<tr>
+                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>{fmt_int(linha_mes['venda'])}</td>
+                  <td class="conv {cor_linha}">{fmt_pct(linha_mes['conv_produtiva'])}</td>
+                </tr>"""
 
         evol = evolucao.get(l["parceiro"].strip().lower())
-        evol_tipo = "cinza" if evol is None else ("verde" if evol >= 0 else "vermelho")
 
-        pills = "".join([
-            tpl.badge(fmt_int(l["mailing"]), "Mailing", "cinza"),
-            tpl.badge(fmt_num1(l["media_du"]), "Média DU", "rosa"),
-            tpl.badge(fmt_int(l["produtivo"]), "Produtivo", "cinza"),
-            tpl.badge(fmt_pct(l["conv_produtiva"]), "Conv. produtiva", "verde"),
-            tpl.badge(fmt_pct(l["conv_mailing"]), "Conv. mailing", "laranja"),
-            tpl.badge(fmt_int(l["venda"]), "Vendas", "rosa"),
-            tpl.badge(fmt_int(l["ativos_du"]), "Ativos/dia útil", "cinza"),
-            tpl.badge(fmt_pct_signed(evol), "Evolução Ativos DU", evol_tipo),
-        ])
-
-        blocos_parceiros += f"""
-        <div class="parceiro-block">
-          <div class="parceiro-top">
-            <div class="rank-num">{i:02d}</div>
-            <div class="parceiro-nome-linha">
-              <div class="nome">{l['parceiro'].title()}</div>
-              <div class="contexto">{contexto}</div>
-            </div>
-            <div class="parceiro-headline">
-              <div class="num">{fmt_pct(l['conv_produtiva'])}</div>
-              <div class="lbl">Conv. produtiva</div>
-            </div>
+        painel_html += f"""
+        <div class="painel">
+          <div class="painel-head">
+            <div class="painel-icone">{inicial}</div>
+            <div class="painel-nome">{nome}</div>
+            <div class="farol {cor_farol}" title="Conversão produtiva vs. média do grupo"></div>
           </div>
-          {barra}
-          <div class="pills-grid">{pills}</div>
+          <table class="evolutivo">
+            <tr><th>Mês</th><th>Mailing</th><th>Vendas</th><th>Conv.</th></tr>
+            {linhas_tabela}
+          </table>
+          <div class="callout">
+            <div class="num">{fmt_int(l['ativos_du'])}</div>
+            <div class="txt"><b>Ativos por dia útil</b>Evolução vs. mês anterior: {fmt_pct_signed(evol)}</div>
+          </div>
         </div>"""
 
-    nota = ""
+    # --- Consolidado geral do período --------------------------------------
+    evol_geral_tipo = "verde" if (evolucao_geral or 0) >= 0 else "vermelho"
+    consolidado = f"""
+    <div class="rel-consolidado">
+      <div class="rotulo">Consolidado geral<small>{mes}</small></div>
+      <div class="stat-mini"><div class="num">{fmt_int(agg['mailing_total'])}</div><div class="lbl">Mailing total</div></div>
+      <div class="stat-mini"><div class="num">{fmt_int(agg['produtivo_total'])}</div><div class="lbl">Contatos produtivos</div></div>
+      <div class="stat-mini"><div class="num">{fmt_int(agg['venda_total'])}</div><div class="lbl">Vendas líquidas</div></div>
+      <div class="stat-mini"><div class="num">{fmt_int(agg['ativos_du_total'])}</div><div class="lbl">Ativos/dia útil (soma)</div></div>
+      <div class="stat-mini"><div class="num">{fmt_pct(agg['conv_prod_geral'])}</div><div class="lbl">Conversão produtiva</div></div>
+    </div>"""
+
+    # --- Conversão consolidada por parceiro --------------------------------
+    itens_conv = ""
+    for l in linhas_ordenadas:
+        nome = l["parceiro"].title()
+        itens_conv += f"""
+        <div class="conv-canal-item">
+          <div class="painel-icone">{nome[0]}</div>
+          <div>
+            <div class="num">{fmt_pct(l['conv_produtiva'])}</div>
+            <div class="nome">{nome}</div>
+          </div>
+        </div>"""
+    conv_por_parceiro = f"""
+    <div class="rel-conv-canal">
+      <div class="titulo">Conversão produtiva consolidada por parceiro</div>
+      <div class="conv-canal-grid">{itens_conv}</div>
+    </div>"""
+
+    # --- Insights executivos (gerados a partir dos próprios dados) --------
+    melhor = linhas_ordenadas[0]
+    pior = linhas_ordenadas[-1]
+    insights = [
+        f"<span class='icone'>🏆</span><b>{melhor['parceiro'].title()}</b> lidera a conversão produtiva do período, com {fmt_pct(melhor['conv_produtiva'])} — acima da média do grupo ({fmt_pct(media_grupo)}).",
+        f"<span class='icone'>⚠️</span><b>{pior['parceiro'].title()}</b> é o ponto de atenção do período, com {fmt_pct(pior['conv_produtiva'])} de conversão produtiva.",
+    ]
     if mes_pendente:
-        nota = f"""<div class="note">📩 Mailing de <b>{mes_pendente}</b> já carregado: <b>{fmt_int(mailing_pendente)}</b>
-        contatos aguardando início da campanha.</div>"""
+        insights.append(
+            f"<span class='icone'>📩</span>Mailing de <b>{mes_pendente}</b> já carregado ({fmt_int(mailing_pendente)} contatos), aguardando início da campanha."
+        )
+    insights.append(
+        "<span class='icone'>🎯</span>Prioridade: elevar a conversão dos parceiros abaixo da média do grupo, mantendo a consistência dos que já performam acima."
+    )
+    insights_html = "".join(f'<div class="insight-card">{i}</div>' for i in insights)
+
+    aviso_dados = ""
+    for a, b in zip(blocos_todos, blocos_todos[1:]):
+        chaves = ["mailing", "produtivo", "venda", "ativos_du"]
+        iguais = all(
+            all(is_blank(la.get(k)) == is_blank(lb.get(k)) and la.get(k) == lb.get(k) for k in chaves)
+            for la, lb in zip(a["linhas"], b["linhas"])
+        )
+        if iguais and a["linhas"]:
+            aviso_dados = (f" ⚠ Os dados de <b>{a['mes']}</b> e <b>{b['mes']}</b> estão idênticos na planilha original — "
+                            f"confirme se a base de {b['mes']} já foi atualizada antes de divulgar.")
+
+    footer_note = f"""
+    <div class="rel-footer-note">
+      <b>IMPORTANTE:</b> "Ativos por dia útil" já considera os dias úteis do período ({bloco['label_total_du']}).
+      O farol (🟢🟠🔴) compara a conversão produtiva de cada parceiro com a <b>média do grupo</b> no mês,
+      já que não há uma meta fixa cadastrada na planilha.{aviso_dados}
+    </div>"""
 
     corpo = f"""
-    <div class="rank-card">
-      <div class="rank-header">
-        <div class="rank-header-top">
-          <img class="logo" src="{logo_branco}" alt="vero">
-          <span class="eyebrow">{mes}</span>
-        </div>
-        <div class="title-group">
-          <h1>Desempenho por parceiro</h1>
-          <p>Mailing {fmt_int(agg['mailing_total'])} · {fmt_int(agg['produtivo_total'])} contatos produtivos · {fmt_int(agg['venda_total'])} vendas</p>
-        </div>
+    <div class="rel-page">
+      {banner}
+      <div class="rel-body">
+        <div class="rel-grid">{painel_html}</div>
+        {consolidado}
+        {conv_por_parceiro}
+        <div class="rel-insights">{insights_html}</div>
       </div>
-      <div class="legenda">Barra = % conversão produtiva · marcador em {fmt_pct(media_grupo)} (média do grupo) ·
-      Evolução Ativos DU compara com o mês anterior na planilha</div>
-      {bloco_consolidado}
-      <div class="section-divider">Por parceiro</div>
-      {blocos_parceiros}
-      {nota}
-      <div class="footer">
+      {footer_note}
+      <div class="rel-assinatura">
         <span>Gerado em {gerado_em} · vero</span>
-        <img src="{logo_cor}" alt="vero">
+        <img src="{logo_cor}" alt="vero" style="height:16px">
       </div>
     </div>
     <div class="links">
@@ -506,8 +563,8 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
     </div>
     """
     return tpl.render(
-        titulo=f"vero · Desempenho por Parceiro — {mes}",
-        descricao="Painel consolidado com todos os indicadores de mailing, conversão e vendas dos parceiros vero.",
+        titulo=f"vero · Acompanhamento Evolutivo dos Parceiros — {mes}",
+        descricao="Relatório consolidado de mailing, conversão produtiva e vendas dos parceiros vero.",
         corpo_html=corpo,
     )
 
