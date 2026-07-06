@@ -427,7 +427,7 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
         <img class="logo" src="{logo_branco}" alt="vero">
         <div class="titles">
           <span class="tag">Relatório comercial · Mailing parceiros</span>
-          <h1>Acompanhamento Evolutivo — Parceiros/Webdealers</h1>
+          <h1>RENTABILIZAÇÃO PARCEIROS NACIONAL</h1>
           <p>Evolução mês a mês da conversão produtiva e das vendas por parceiro, com foco em resultado e consistência.</p>
         </div>
       </div>
@@ -451,13 +451,14 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
                 continue
             if linha_mes["produtivo"] is None:
                 linhas_tabela += f"""<tr class="pendente">
-                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>—</td><td class="conv">Aguardando</td>
+                  <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>—</td><td class="conv">Aguardando</td><td class="conv">—</td>
                 </tr>"""
             else:
                 cor_linha = farol(linha_mes["conv_produtiva"], media_grupo)
                 linhas_tabela += f"""<tr>
                   <td>{b['mes']}</td><td>{fmt_int(linha_mes['mailing'])}</td><td>{fmt_int(linha_mes['venda'])}</td>
                   <td class="conv {cor_linha}">{fmt_pct(linha_mes['conv_produtiva'])}</td>
+                  <td class="conv">{fmt_pct(linha_mes['conv_mailing'])}</td>
                 </tr>"""
 
         evol = evolucao.get(l["parceiro"].strip().lower())
@@ -470,13 +471,14 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
             <div class="farol {cor_farol}" title="Conversão produtiva vs. média do grupo"></div>
           </div>
           <table class="evolutivo">
-            <tr><th>Mês</th><th>Mailing</th><th>Vendas</th><th>Conv.</th></tr>
+            <tr><th>Mês</th><th>Mailing</th><th>Vendas Total</th><th>Conversão Produtiva</th><th>Conv. Total</th></tr>
             {linhas_tabela}
           </table>
           <div class="callout">
             <div class="num">{fmt_int(l['ativos_du'])}</div>
             <div class="txt"><b>Ativos por dia útil</b>Evolução vs. mês anterior: {fmt_pct_signed(evol)}</div>
           </div>
+
         </div>"""
 
     # --- Consolidado geral do período --------------------------------------
@@ -489,6 +491,7 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
       <div class="stat-mini"><div class="num">{fmt_int(agg['venda_total'])}</div><div class="lbl">Vendas líquidas</div></div>
       <div class="stat-mini"><div class="num">{fmt_int(agg['ativos_du_total'])}</div><div class="lbl">Ativos/dia útil (soma)</div></div>
       <div class="stat-mini"><div class="num">{fmt_pct(agg['conv_prod_geral'])}</div><div class="lbl">Conversão produtiva</div></div>
+      <div class="stat-mini"><div class="num">{fmt_pct(agg['conv_mail_geral'])}</div><div class="lbl">Conversão total</div></div>
     </div>"""
 
     # --- Conversão consolidada por parceiro --------------------------------
@@ -563,7 +566,7 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
     </div>
     """
     return tpl.render(
-        titulo=f"vero · Acompanhamento Evolutivo dos Parceiros — {mes}",
+        titulo=f"vero · Rentabilização Parceiros Nacional — {mes}",
         descricao="Relatório consolidado de mailing, conversão produtiva e vendas dos parceiros vero.",
         corpo_html=corpo,
     )
