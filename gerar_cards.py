@@ -407,7 +407,7 @@ def farol(pct, benchmark):
     return "vermelho"
 
 
-def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parceiro_links):
+def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parceiro_links, foto_uri=None):
     agg = agregados_gerais(bloco)
     mes = bloco["mes"]
 
@@ -422,7 +422,8 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
 
     # --- Banner -----------------------------------------------------------
     banner = f"""
-    <div class="rel-banner">
+    <div class="rel-banner deco-header">
+      {tpl.deco_header_extras(foto_uri, CORES['cinza1'])}
       <div class="brand">
         <img class="logo" src="{logo_branco}" alt="vero">
         <div class="titles">
@@ -578,7 +579,7 @@ def build_card_geral(bloco, blocos_todos, logo_branco, logo_cor, gerado_em, parc
     )
 
 
-def build_card_parceiro(linha, bloco, logo_branco, logo_cor, gerado_em, link_geral):
+def build_card_parceiro(linha, bloco, logo_branco, logo_cor, gerado_em, link_geral, foto_uri=None):
     mes = bloco["mes"]
     nome = linha["parceiro"].title()
 
@@ -595,7 +596,8 @@ def build_card_parceiro(linha, bloco, logo_branco, logo_cor, gerado_em, link_ger
 
     corpo = f"""
     <div class="card">
-      <div class="header">
+      <div class="header deco-header">
+        {tpl.deco_header_extras(foto_uri, '#ffffff')}
         <div class="top-row">
           <img class="logo" src="{logo_branco}" alt="vero">
           <span class="eyebrow">Resultados · {mes}</span>
@@ -668,6 +670,7 @@ def main():
     parceiros_dir.mkdir(parents=True, exist_ok=True)
 
     logo_branco, logo_cor = tpl.logos_data_uri(Path(args.assets))
+    foto_uri = None  # decorativo sem foto, a pedido — só círculos + onda no cabeçalho
     gerado_em = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     parceiro_links = []
@@ -677,10 +680,10 @@ def main():
 
     for l in alvo["linhas"]:
         slug = slugify(l["parceiro"])
-        html_parceiro = build_card_parceiro(l, alvo, logo_branco, logo_cor, gerado_em, link_geral="../index.html")
+        html_parceiro = build_card_parceiro(l, alvo, logo_branco, logo_cor, gerado_em, link_geral="../index.html", foto_uri=foto_uri)
         (parceiros_dir / f"{slug}.html").write_text(html_parceiro, encoding="utf-8")
 
-    html_geral = build_card_geral(alvo, blocos, logo_branco, logo_cor, gerado_em, parceiro_links)
+    html_geral = build_card_geral(alvo, blocos, logo_branco, logo_cor, gerado_em, parceiro_links, foto_uri=foto_uri)
     (saida / "index.html").write_text(html_geral, encoding="utf-8")
 
     print(f"\nCards gerados em: {saida}/")

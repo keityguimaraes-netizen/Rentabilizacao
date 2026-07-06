@@ -27,6 +27,13 @@ def logos_data_uri(assets_dir: Path):
     return branco, colorido
 
 
+def foto_informativo_data_uri(assets_dir: Path):
+    caminho = assets_dir / "foto_informativo.png"
+    if not caminho.exists():
+        return None
+    return f"data:image/png;base64,{_b64(caminho)}"
+
+
 def donut_svg(pct, size=176, stroke=16, label_top="", label_bottom="Conversão Produtiva", uid="g1"):
     pct = 0 if pct is None else max(0, min(pct, 1))
     r = (size - stroke) / 2
@@ -94,6 +101,23 @@ def barra_com_marcador(pct, marcador_pct, cor_barra=None):
         <div class="barra-marcador" style="left:{marcador_pos:.1f}%"></div>
       </div>
     </div>"""
+
+
+def deco_header_extras(foto_uri, wave_fill):
+    if not foto_uri:
+        foto_html = ""
+    else:
+        foto_html = f'<div class="deco-photo" style="background-image:url(\'{foto_uri}\')"></div>'
+    wave = f"""
+    <svg class="deco-wave" viewBox="0 0 1440 60" preserveAspectRatio="none">
+      <path d="M0,40 C360,5 1080,70 1440,15 L1440,60 L0,60 Z" fill="{wave_fill}"/>
+    </svg>"""
+    return f"""
+    <div class="deco-circle orange"></div>
+    <div class="deco-circle ring"></div>
+    <div class="deco-circle big-bordo"></div>
+    {foto_html}
+    {wave}"""
 
 
 BASE_CSS = f"""
@@ -546,6 +570,64 @@ table.evolutivo tr.pendente td {{ color:{CORES['cinza3']}; font-style:italic; }}
 @media (max-width: 640px) {{
   .rel-banner {{ flex-direction:column; align-items:flex-start; }}
   .rel-consolidado {{ flex-direction:column; align-items:flex-start; }}
+}}
+
+/* ======================================================================
+   Cabeçalho decorativo (círculos + foto + onda) — estilo "Informativo GDC"
+   ====================================================================== */
+.deco-header {{
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 34px !important;
+}}
+.rel-banner.deco-header {{
+  padding-top: 44px !important;
+}}
+.header.deco-header {{
+  padding-top: 38px !important;
+}}
+.deco-circle {{
+  position: absolute;
+  border-radius: 50%;
+}}
+.deco-circle.orange {{
+  width: 46px; height: 46px;
+  background: {CORES['laranja']};
+  top: 14px; left: 18px;
+  opacity: 0.9;
+}}
+.deco-circle.ring {{
+  width: 30px; height: 30px;
+  border: 2.5px solid rgba(255,255,255,0.85);
+  top: 30px; left: 40px;
+}}
+.deco-circle.big-bordo {{
+  width: 150px; height: 150px;
+  background: rgba(146,0,38,0.35);
+  top: -55px; right: 90px;
+}}
+.deco-photo {{
+  position: absolute;
+  top: 10px;
+  right: 22px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.9);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}}
+.deco-wave {{
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  width: 100%;
+  height: 34px;
+  display: block;
+}}
+@media (max-width: 480px) {{
+  .deco-photo {{ width: 64px; height: 64px; }}
+  .deco-circle.big-bordo {{ display: none; }}
 }}
 
 /* --- Ranking / desempenho por parceiro --- */
